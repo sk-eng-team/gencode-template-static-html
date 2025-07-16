@@ -29,7 +29,7 @@ A modern, interactive static website template built with HTML, CSS, JavaScript, 
 docker-compose up -d
 ```
 
-4. Open your browser and visit: http://localhost:8080
+4. Open your browser and visit: http://localhost:3000
 
 ### Run with Docker only
 
@@ -38,7 +38,7 @@ docker-compose up -d
 docker build -t hello-world-template .
 
 # Run the container
-docker run -d -p 8080:80 --name hello-world-site hello-world-template
+docker run -d -p 3000:3000 --name hello-world-site hello-world-template
 ```
 
 ### Stop the application
@@ -123,12 +123,12 @@ Edit CSS custom properties in `style.css`:
 
 ### Image Details
 - **Base Image**: `nginx:alpine` (lightweight, ~5MB)
-- **Exposed Port**: 80 (mapped to 8080 on host)
+- **Exposed Port**: 3000
 - **Web Root**: `/usr/share/nginx/html`
 
 ### Environment Variables
 - `NGINX_HOST`: Server hostname (default: localhost)
-- `NGINX_PORT`: Internal nginx port (default: 80)
+- `NGINX_PORT`: Internal nginx port (default: 3000)
 
 ## 🌍 Deployment Options
 

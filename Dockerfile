@@ -12,11 +12,11 @@ COPY index.html .
 COPY style.css .
 COPY script.js .
 
-# Copy custom nginx configuration if needed (optional)
-# COPY nginx.conf /etc/nginx/nginx.conf
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80
-EXPOSE 80
+# Expose port 3000
+EXPOSE 3000
 
 # Add a label for documentation
 LABEL maintainer="Your Name <your.email@example.com>"
