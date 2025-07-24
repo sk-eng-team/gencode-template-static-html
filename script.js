@@ -1,272 +1,372 @@
-// DOM elements
-const changeColorBtn = document.getElementById('changeColorBtn');
-const showTimeBtn = document.getElementById('showTimeBtn');
-const timeDisplay = document.getElementById('timeDisplay');
-const clickCounter = document.getElementById('clickCounter');
+// Get WebGL context
+const canvas = document.getElementById("webgl-canvas");
+const gl = canvas.getContext("webgl");
 
-// State variables
-let isDarkTheme = false;
-let clickCount = 0;
-let timeInterval = null;
-
-// Initialize the app
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Hello World Template loaded successfully!');
-    
-    // Add welcome animation
-    animateWelcome();
-    
-    // Check for saved theme preference
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        toggleTheme();
-    }
-    
-    // Load saved click count
-    const savedClicks = localStorage.getItem('clickCount');
-    if (savedClicks) {
-        clickCount = parseInt(savedClicks);
-        updateClickCounter();
-    }
-});
-
-// Theme toggle functionality
-changeColorBtn.addEventListener('click', function() {
-    toggleTheme();
-    incrementClickCounter();
-    
-    // Add click animation
-    this.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        this.style.transform = '';
-    }, 150);
-});
-
-// Time display functionality
-showTimeBtn.addEventListener('click', function() {
-    toggleTimeDisplay();
-    incrementClickCounter();
-    
-    // Add click animation
-    this.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        this.style.transform = '';
-    }, 150);
-});
-
-// Functions
-function toggleTheme() {
-    const body = document.body;
-    
-    if (!isDarkTheme) {
-        body.classList.add('dark-theme');
-        changeColorBtn.textContent = '☀️ Light Theme';
-        isDarkTheme = true;
-        localStorage.setItem('theme', 'dark');
-        showNotification('🌙 Dark theme activated!');
-    } else {
-        body.classList.remove('dark-theme');
-        changeColorBtn.textContent = '🌙 Dark Theme';
-        isDarkTheme = false;
-        localStorage.setItem('theme', 'light');
-        showNotification('☀️ Light theme activated!');
-    }
+if (!gl) {
+  alert("WebGL not supported");
+  throw new Error("WebGL not supported");
 }
 
-function toggleTimeDisplay() {
-    if (timeInterval) {
-        clearInterval(timeInterval);
-        timeInterval = null;
-        timeDisplay.textContent = '';
-        showTimeBtn.textContent = 'Show Time';
-        showNotification('⏰ Time display stopped');
-    } else {
-        startTimeDisplay();
-        showTimeBtn.textContent = 'Hide Time';
-        showNotification('⏰ Time display started');
-    }
-}
-
-function startTimeDisplay() {
-    updateTime();
-    timeInterval = setInterval(updateTime, 1000);
-}
-
-function updateTime() {
-    const now = new Date();
-    const options = {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    };
+// Vertex shader source
+const vertexShaderSource = `
+    attribute vec3 a_position;
+    attribute vec3 a_normal;
     
-    const formattedTime = now.toLocaleDateString('en-US', options);
-    timeDisplay.textContent = `📅 ${formattedTime}`;
-}
-
-function incrementClickCounter() {
-    clickCount++;
-    updateClickCounter();
-    localStorage.setItem('clickCount', clickCount.toString());
+    uniform mat4 u_modelMatrix;
+    uniform mat4 u_viewMatrix;
+    uniform mat4 u_projectionMatrix;
+    uniform mat3 u_normalMatrix;
     
-    // Add celebration animation for milestones
-    if (clickCount % 10 === 0) {
-        celebrateClick();
-    }
-}
-
-function updateClickCounter() {
-    clickCounter.textContent = clickCount;
+    varying vec3 v_normal;
+    varying vec3 v_position;
     
-    // Add pulse animation
-    clickCounter.style.transform = 'scale(1.2)';
-    setTimeout(() => {
-        clickCounter.style.transform = '';
-    }, 200);
-}
-
-function celebrateClick() {
-    showNotification(`🎉 Congratulations! You've clicked ${clickCount} times!`);
-    
-    // Add confetti effect (simple version)
-    createConfetti();
-}
-
-function createConfetti() {
-    for (let i = 0; i < 20; i++) {
-        const confetti = document.createElement('div');
-        confetti.style.position = 'fixed';
-        confetti.style.left = Math.random() * 100 + 'vw';
-        confetti.style.top = '-10px';
-        confetti.style.width = '10px';
-        confetti.style.height = '10px';
-        confetti.style.backgroundColor = getRandomColor();
-        confetti.style.borderRadius = '50%';
-        confetti.style.pointerEvents = 'none';
-        confetti.style.zIndex = '1000';
-        confetti.style.animation = `fall ${Math.random() * 2 + 1}s linear forwards`;
+    void main() {
+        vec4 worldPosition = u_modelMatrix * vec4(a_position, 1.0);
+        v_position = worldPosition.xyz;
+        v_normal = u_normalMatrix * a_normal;
         
-        document.body.appendChild(confetti);
-        
-        // Remove confetti after animation
-        setTimeout(() => {
-            if (confetti.parentNode) {
-                confetti.parentNode.removeChild(confetti);
-            }
-        }, 3000);
-    }
-}
-
-function getRandomColor() {
-    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7dc6f', '#bb8fce', '#82e0aa'];
-    return colors[Math.floor(Math.random() * colors.length)];
-}
-
-function showNotification(message) {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        font-weight: 600;
-        z-index: 1000;
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Animate in
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 100);
-    
-    // Animate out and remove
-    setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
-}
-
-function animateWelcome() {
-    const hero = document.querySelector('.hero .container');
-    hero.style.opacity = '0';
-    hero.style.transform = 'translateY(30px)';
-    
-    setTimeout(() => {
-        hero.style.transition = 'all 0.8s ease';
-        hero.style.opacity = '1';
-        hero.style.transform = 'translateY(0)';
-    }, 200);
-}
-
-// Add CSS animation for confetti
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes fall {
-        to {
-            transform: translateY(100vh) rotate(360deg);
-            opacity: 0;
-        }
+        gl_Position = u_projectionMatrix * u_viewMatrix * worldPosition;
     }
 `;
-document.head.appendChild(style);
 
-// Add some fun keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    // Space bar to toggle theme
-    if (e.code === 'Space' && !e.target.matches('input, textarea')) {
-        e.preventDefault();
-        toggleTheme();
-        incrementClickCounter();
-    }
+// Fragment shader source
+const fragmentShaderSource = `
+    precision mediump float;
     
-    // 'T' key to toggle time
-    if (e.key.toLowerCase() === 't' && !e.target.matches('input, textarea')) {
-        toggleTimeDisplay();
-        incrementClickCounter();
-    }
+    varying vec3 v_normal;
+    varying vec3 v_position;
     
-    // 'R' key to reset counter
-    if (e.key.toLowerCase() === 'r' && !e.target.matches('input, textarea')) {
-        clickCount = 0;
-        updateClickCounter();
-        localStorage.setItem('clickCount', '0');
-        showNotification('🔄 Counter reset!');
+    uniform vec3 u_lightPosition;
+    uniform vec3 u_lightColor;
+    uniform vec3 u_sphereColor;
+    uniform vec3 u_cameraPosition;
+    
+    void main() {
+        vec3 normal = normalize(v_normal);
+        vec3 lightDirection = normalize(u_lightPosition - v_position);
+        vec3 viewDirection = normalize(u_cameraPosition - v_position);
+        vec3 reflectDirection = reflect(-lightDirection, normal);
+        
+        // Ambient
+        vec3 ambient = 0.3 * u_sphereColor;
+        
+        // Diffuse
+        float diff = max(dot(normal, lightDirection), 0.0);
+        vec3 diffuse = diff * u_lightColor * u_sphereColor;
+        
+        // Specular
+        float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 32.0);
+        vec3 specular = spec * u_lightColor;
+        
+        vec3 result = ambient + diffuse + specular;
+        gl_FragColor = vec4(result, 1.0);
     }
-});
+`;
 
-// Add window resize handler for responsive adjustments
-window.addEventListener('resize', function() {
-    // Adjust layout if needed
-    console.log('Window resized to:', window.innerWidth, 'x', window.innerHeight);
-});
+// Create shader function
+function createShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
 
-// Log some info for developers
-console.log(`
-🎯 Hello World Template
-📝 Available keyboard shortcuts:
-   • Space: Toggle theme
-   • T: Toggle time display  
-   • R: Reset click counter
-   
-🔧 Built with HTML, CSS, JavaScript & Docker
-`);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error("Error compiling shader:", gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
 
-// Add smooth scrolling for better UX
-document.documentElement.style.scrollBehavior = 'smooth'; 
+  return shader;
+}
+
+// Create program function
+function createProgram(gl, vertexShader, fragmentShader) {
+  const program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error("Error linking program:", gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+    return null;
+  }
+
+  return program;
+}
+
+// Generate sphere geometry
+function createSphere(radius, latitudeBands, longitudeBands) {
+  const vertices = [];
+  const normals = [];
+  const indices = [];
+
+  for (let lat = 0; lat <= latitudeBands; lat++) {
+    const theta = (lat * Math.PI) / latitudeBands;
+    const sinTheta = Math.sin(theta);
+    const cosTheta = Math.cos(theta);
+
+    for (let lon = 0; lon <= longitudeBands; lon++) {
+      const phi = (lon * 2 * Math.PI) / longitudeBands;
+      const sinPhi = Math.sin(phi);
+      const cosPhi = Math.cos(phi);
+
+      const x = cosPhi * sinTheta;
+      const y = cosTheta;
+      const z = sinPhi * sinTheta;
+
+      vertices.push(radius * x, radius * y, radius * z);
+      normals.push(x, y, z);
+    }
+  }
+
+  for (let lat = 0; lat < latitudeBands; lat++) {
+    for (let lon = 0; lon < longitudeBands; lon++) {
+      const first = lat * (longitudeBands + 1) + lon;
+      const second = first + longitudeBands + 1;
+
+      indices.push(first, second, first + 1);
+      indices.push(second, second + 1, first + 1);
+    }
+  }
+
+  return { vertices, normals, indices };
+}
+
+// Matrix operations
+function createMatrix4() {
+  return new Float32Array(16);
+}
+
+function identity(matrix) {
+  matrix[0] = 1;
+  matrix[1] = 0;
+  matrix[2] = 0;
+  matrix[3] = 0;
+  matrix[4] = 0;
+  matrix[5] = 1;
+  matrix[6] = 0;
+  matrix[7] = 0;
+  matrix[8] = 0;
+  matrix[9] = 0;
+  matrix[10] = 1;
+  matrix[11] = 0;
+  matrix[12] = 0;
+  matrix[13] = 0;
+  matrix[14] = 0;
+  matrix[15] = 1;
+  return matrix;
+}
+
+function perspective(matrix, fovy, aspect, near, far) {
+  const f = 1.0 / Math.tan(fovy / 2);
+  const nf = 1 / (near - far);
+
+  identity(matrix);
+  matrix[0] = f / aspect;
+  matrix[5] = f;
+  matrix[10] = (far + near) * nf;
+  matrix[11] = -1;
+  matrix[14] = 2 * far * near * nf;
+  matrix[15] = 0;
+  return matrix;
+}
+
+function lookAt(matrix, eye, target, up) {
+  const zAxis = normalize([
+    eye[0] - target[0],
+    eye[1] - target[1],
+    eye[2] - target[2],
+  ]);
+  const xAxis = normalize(cross(up, zAxis));
+  const yAxis = cross(zAxis, xAxis);
+
+  matrix[0] = xAxis[0];
+  matrix[1] = yAxis[0];
+  matrix[2] = zAxis[0];
+  matrix[3] = 0;
+  matrix[4] = xAxis[1];
+  matrix[5] = yAxis[1];
+  matrix[6] = zAxis[1];
+  matrix[7] = 0;
+  matrix[8] = xAxis[2];
+  matrix[9] = yAxis[2];
+  matrix[10] = zAxis[2];
+  matrix[11] = 0;
+  matrix[12] = -dot(xAxis, eye);
+  matrix[13] = -dot(yAxis, eye);
+  matrix[14] = -dot(zAxis, eye);
+  matrix[15] = 1;
+  return matrix;
+}
+
+function rotateY(matrix, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+
+  identity(matrix);
+  matrix[0] = c;
+  matrix[2] = s;
+  matrix[8] = -s;
+  matrix[10] = c;
+  return matrix;
+}
+
+function normalize(v) {
+  const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+  return [v[0] / len, v[1] / len, v[2] / len];
+}
+
+function cross(a, b) {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+}
+
+function dot(a, b) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+function normalMatrix(modelMatrix) {
+  // Extract 3x3 from 4x4 and transpose
+  return new Float32Array([
+    modelMatrix[0],
+    modelMatrix[4],
+    modelMatrix[8],
+    modelMatrix[1],
+    modelMatrix[5],
+    modelMatrix[9],
+    modelMatrix[2],
+    modelMatrix[6],
+    modelMatrix[10],
+  ]);
+}
+
+// Initialize WebGL
+const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+const fragmentShader = createShader(
+  gl,
+  gl.FRAGMENT_SHADER,
+  fragmentShaderSource
+);
+const program = createProgram(gl, vertexShader, fragmentShader);
+
+// Get attribute and uniform locations
+const positionLocation = gl.getAttribLocation(program, "a_position");
+const normalLocation = gl.getAttribLocation(program, "a_normal");
+const modelMatrixLocation = gl.getUniformLocation(program, "u_modelMatrix");
+const viewMatrixLocation = gl.getUniformLocation(program, "u_viewMatrix");
+const projectionMatrixLocation = gl.getUniformLocation(
+  program,
+  "u_projectionMatrix"
+);
+const normalMatrixLocation = gl.getUniformLocation(program, "u_normalMatrix");
+const lightPositionLocation = gl.getUniformLocation(program, "u_lightPosition");
+const lightColorLocation = gl.getUniformLocation(program, "u_lightColor");
+const sphereColorLocation = gl.getUniformLocation(program, "u_sphereColor");
+const cameraPositionLocation = gl.getUniformLocation(
+  program,
+  "u_cameraPosition"
+);
+
+// Create sphere geometry
+const sphere = createSphere(1.0, 30, 30);
+
+// Create buffers
+const positionBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+gl.bufferData(
+  gl.ARRAY_BUFFER,
+  new Float32Array(sphere.vertices),
+  gl.STATIC_DRAW
+);
+
+const normalBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+gl.bufferData(
+  gl.ARRAY_BUFFER,
+  new Float32Array(sphere.normals),
+  gl.STATIC_DRAW
+);
+
+const indexBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+gl.bufferData(
+  gl.ELEMENT_ARRAY_BUFFER,
+  new Uint16Array(sphere.indices),
+  gl.STATIC_DRAW
+);
+
+// Set up matrices
+const modelMatrix = createMatrix4();
+const viewMatrix = createMatrix4();
+const projectionMatrix = createMatrix4();
+
+// Camera and lighting setup
+const cameraPosition = [0, 0, 5];
+const lightPosition = [5, 5, 5];
+const lightColor = [1.0, 1.0, 1.0];
+const sphereColor = [0.3, 0.7, 1.0];
+
+// Set up perspective projection
+perspective(
+  projectionMatrix,
+  Math.PI / 4,
+  canvas.width / canvas.height,
+  0.1,
+  100.0
+);
+
+// Set up view matrix
+lookAt(viewMatrix, cameraPosition, [0, 0, 0], [0, 1, 0]);
+
+// Animation variables
+let rotation = 0;
+
+// Render function
+function render() {
+  // Clear canvas
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  // Enable depth testing
+  gl.enable(gl.DEPTH_TEST);
+
+  // Use shader program
+  gl.useProgram(program);
+
+  // Update rotation
+  rotation += 0.01;
+  rotateY(modelMatrix, rotation);
+
+  // Set uniforms
+  gl.uniformMatrix4fv(modelMatrixLocation, false, modelMatrix);
+  gl.uniformMatrix4fv(viewMatrixLocation, false, viewMatrix);
+  gl.uniformMatrix4fv(projectionMatrixLocation, false, projectionMatrix);
+  gl.uniformMatrix3fv(normalMatrixLocation, false, normalMatrix(modelMatrix));
+  gl.uniform3fv(lightPositionLocation, lightPosition);
+  gl.uniform3fv(lightColorLocation, lightColor);
+  gl.uniform3fv(sphereColorLocation, sphereColor);
+  gl.uniform3fv(cameraPositionLocation, cameraPosition);
+
+  // Bind position buffer
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.enableVertexAttribArray(positionLocation);
+  gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+
+  // Bind normal buffer
+  gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+  gl.enableVertexAttribArray(normalLocation);
+  gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
+
+  // Bind index buffer and draw
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  gl.drawElements(gl.TRIANGLES, sphere.indices.length, gl.UNSIGNED_SHORT, 0);
+
+  // Request next frame
+  requestAnimationFrame(render);
+}
+
+// Start rendering
+render();
