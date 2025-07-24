@@ -12,16 +12,15 @@ COPY index.html .
 COPY style.css .
 COPY script.js .
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Configure nginx to listen on port 3000
+RUN echo 'server {' > /etc/nginx/conf.d/default.conf && \
+    echo '    listen 3000;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    root /usr/share/nginx/html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    index index.html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '}' >> /etc/nginx/conf.d/default.conf
 
 # Expose port 3000
 EXPOSE 3000
-
-# Add a label for documentation
-LABEL maintainer="Your Name <your.email@example.com>"
-LABEL description="Hello World Template - Static HTML site with CSS and JavaScript"
-LABEL version="1.0"
 
 # nginx runs in the foreground by default in the alpine image
 CMD ["nginx", "-g", "daemon off;"] 
